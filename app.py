@@ -103,6 +103,8 @@ def _(mo, wide_df):
     - {sort_by_values}
     - {cmap}
     - {multiplier}
+    - {vmin}
+    - {vmax}
     - {width}
     - {height}
     """).batch(
@@ -115,6 +117,8 @@ def _(mo, wide_df):
         sort_by_values=mo.ui.checkbox(label="Sort Table by Values", value=True),
         cmap=mo.ui.text(label="Color Map:", value="Blues"),
         multiplier=mo.ui.number(label="Multiply Values (optional):", value=1),
+        vmin=mo.ui.number(label="Minimum Color Scale Value (optional)"),
+        vmax=mo.ui.number(label="Maximum Color Scale Value (optional)"),
         width=mo.ui.number(label="Width:", value=10),
         height=mo.ui.number(label="Height:", value=10),
     )
@@ -134,6 +138,8 @@ def _(List, io, pd, plot_args, plt, sns, wide_df):
         sort_by_values: bool,
         cmap: str,
         multiplier: float,
+        vmin: float,
+        vmax: float,
         width: float,
         height: float
     ):
@@ -150,11 +156,17 @@ def _(List, io, pd, plot_args, plt, sns, wide_df):
         for ix in shared_ix:
             if pd.isnull(plot_df.loc[ix, ix]):
                 plot_df.loc[ix, ix] = diagonal
-    
+
         plot_df = plot_df.loc[rows, cols]
 
         if multiplier is not None:
             plot_df = plot_df * multiplier
+
+        kwargs = {}
+        if vmin is not None:
+            kwargs['vmin'] = vmin
+        if vmax is not None:
+            kwargs['vmax'] = vmax
 
         g = sns.clustermap(
             data=plot_df.fillna(0),
@@ -163,8 +175,10 @@ def _(List, io, pd, plot_args, plt, sns, wide_df):
             annot=show_values,
             fmt="" if fmt is None else fmt,
             cmap=cmap,
-            figsize=(width, height)
+            figsize=(width, height),
+            **kwargs
         )
+        g.ax_cbar.set_position((0., .9, .03, .1))
         g.ax_heatmap.set_xlabel("")
         g.ax_heatmap.set_ylabel("")
 
